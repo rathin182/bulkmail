@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Check, Mail, ArrowRight, FileText, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 interface EmailUploaderProps {
     emailOne: string;
@@ -45,7 +46,7 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
 
     const processFile = async (file: File) => {
         if (!selectedEmail) {
-            alert("Please select a sender email first.");
+            toast.error("Please select a sender email first.");
             return;
         }
 
@@ -71,7 +72,7 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
             finishExtraction(extractedEmails);
         } catch (error) {
             console.error("Error parsing file:", error);
-            alert("Error parsing file.");
+            toast.error("Error parsing file.");
         } finally {
             setIsParsing(false);
         }
@@ -79,7 +80,7 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
 
     const processManualText = () => {
         if (!selectedEmail) {
-            alert("Please select a sender email first.");
+            toast.error("Please select a sender email first.");
             return;
         }
 
@@ -93,7 +94,7 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
         if (uniqueEmails.length > 0) {
             onEmailsExtracted(uniqueEmails, selectedEmail!);
         } else {
-            alert("No valid emails found.");
+            toast.error("No valid emails found.");
         }
     };
 

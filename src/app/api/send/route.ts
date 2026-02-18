@@ -5,35 +5,77 @@ export async function POST(req: Request) {
     try {
         const { to, subject, text, from } = await req.json();
 
-        // Create a transporter using environment variables
-        // In a real scenario, you would use a specific service like SendGrid, Mailgun, or Gmail
-        // For this example, we'll try to use a generic SMTP configuration if provided, 
-        // otherwise we might need to mock success if no creds are present to show the UI flow.
+        if (!from || !to) {
+            return NextResponse.json({ message: 'Missing required fields: to, from', success: false }, { status: 400 });
+        }
+
+        let user = '';
+        let pass = '';
+
+        // Select credentials based on the sender email
+        // We compare the 'from' address with the configured env variables.
+        // It's safer to trim and lowercase for comparison to avoid mismatches.
+        const senderEmail = from.trim();
+        const emailOne = process.env.NEXT_PUBLIC_EMAIL_ONE?.trim();
+        const emailTwo = process.env.NEXT_PUBLIC_EMAIL_TWO?.trim();
+
+        if (emailOne && senderEmail.toLowerCase() === emailOne.toLowerCase()) {
+            user = emailOne;
+            pass = process.env.EMAIL_ONE_PASS || '';
+        } else if (emailTwo && senderEmail.toLowerCase() === emailTwo.toLowerCase()) {
+            user = emailTwo;
+            pass = process.env.EMAIL_TWO_PASS || '';
+        } else {
+            // Fallback or error if the sender is not recognized/authorized
+            // For now, we can check if generic SMTP_USER is set, otherwise fail.
+            if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+                user = process.env.SMTP_USER;
+                pass = process.env.SMTP_PASS;
+            } else {
+                return NextResponse.json({
+                    message: 'Unauthorized sender or missing credentials for this email address',
+                    success: false
+                }, { status: 401 });
+            }
+        }
+
+        if (!user || !pass) {
+            console.log("missing", user, pass);
+            
+            return NextResponse.json({
+                message: 'Missing credentials for the selected sender',
+                success: false
+            }, { status: 500 });
+        }
 
         const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.example.com',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+            host: process.env.SMTP_HOST || 'smtp.gmail.com', // Default to gmail if not set, but user should set it
+            port: parseInt(process.env.SMTP_PORT || '465'),
+            secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT || '465') === 465,
             auth: {
-                user: process.env.SMTP_USER || 'user',
-                pass: process.env.SMTP_PASS || 'pass',
+                user: user,
+                pass: pass,
             },
         });
 
-        // If we are in a dev environment without real credentials, we might want to mock the send
-        // to allow the user to see the UI progress.
-        if (!process.env.SMTP_HOST) {
-            console.log(`[MOCK SEND] From: ${from}, To: ${to}, Subject: ${subject}`);
-            // Simulate a delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return NextResponse.json({ message: 'Email sent (mocked)', success: true });
+        // Verify connection configuration
+        try {
+            await transporter.verify();
+            console.log("Transporter verification successful for user:", user);
+        } catch (verifyError) {
+            console.error("Transporter verification failed:", verifyError);
+            return NextResponse.json({
+                message: 'Failed to authenticate with mail server',
+                error: String(verifyError),
+                success: false
+            }, { status: 500 });
         }
 
         const info = await transporter.sendMail({
-            from, // sender address
-            to, // list of receivers
-            subject, // Subject line
-            text, // plain text body
+            from: `"${user}" <${user}>`, // Ensure the from header matches the authenticated user to avoid spam issues
+            to,
+            subject,
+            text,
             // html: "<b>Hello world?</b>", // html body
         });
 

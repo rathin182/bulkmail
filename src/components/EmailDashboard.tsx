@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, StopCircle, RefreshCw, CheckCircle, XCircle, Loader2, Plus, Trash2, CheckSquare, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface EmailDashboardProps {
     emails: string[];
@@ -45,11 +46,11 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
 
     const addEmail = () => {
         if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-            alert("Please enter a valid email address.");
+            toast.error("Please enter a valid email address.");
             return;
         }
         if (emailList.some(e => e.email === newEmail)) {
-            alert("Email already exists in the list.");
+            toast.error("Email already exists in the list.");
             return;
         }
         setEmailList(prev => [...prev, { email: newEmail, status: "pending", selected: true }]);
@@ -103,12 +104,14 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                 });
 
                 if (response.ok) {
+                    toast.success("Email sent to " + currentEmail.email);
                     setEmailList((prev) => {
                         const newList = [...prev];
                         newList[i].status = "sent";
                         return newList;
                     });
                 } else {
+                    toast.error("sending failed for " + currentEmail.email);
                     setEmailList((prev) => {
                         const newList = [...prev];
                         newList[i].status = "failed";
@@ -117,6 +120,7 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                 }
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
+                    toast.error("sending failed for " + currentEmail.email);
                     setEmailList((prev) => {
                         const newList = [...prev];
                         newList[i].status = "failed";
@@ -129,6 +133,7 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
             setProgress((completed / totalSelected) * 100);
         }
         setIsSending(false);
+        toast.info("Sending process completed.");
     };
 
     const stopSending = () => {
