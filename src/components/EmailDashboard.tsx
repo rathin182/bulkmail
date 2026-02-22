@@ -26,6 +26,7 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
     );
     const [isSending, setIsSending] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [countdown, setCountdown] = useState<number | null>(null);
     const [newEmail, setNewEmail] = useState("");
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -66,11 +67,9 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
         setIsSending(true);
         abortControllerRef.current = new AbortController();
 
-        const emailsToSend = emailList.filter(e => e.selected && e.status !== "sent");
         const totalSelected = emailList.filter(e => e.selected).length;
-        let completed = emailList.filter(e => e.selected && e.status === "sent").length; // Count already sent ones
+        let completed = emailList.filter(e => e.selected && e.status === "sent").length;
 
-        // We iterate through the main list to find selected & pending items
         for (let i = 0; i < emailList.length; i++) {
             if (abortControllerRef.current.signal.aborted) {
                 break;
@@ -111,7 +110,8 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                         return newList;
                     });
                 } else {
-                    toast.error("sending failed for " + currentEmail.email);
+                    const errorData = await response.json().catch(() => ({}));
+                    toast.error(`Failed to send to ${currentEmail.email}: ${errorData.message || 'Unknown error'}`);
                     setEmailList((prev) => {
                         const newList = [...prev];
                         newList[i].status = "failed";
@@ -120,19 +120,34 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                 }
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
-                    toast.error("sending failed for " + currentEmail.email);
+                    toast.error("Network error sending to " + currentEmail.email);
                     setEmailList((prev) => {
                         const newList = [...prev];
                         newList[i].status = "failed";
                         return newList;
                     });
+                } else {
+                    // If aborted, stop everything
+                    break;
                 }
             }
 
             completed++;
             setProgress((completed / totalSelected) * 100);
+
+            // Add 13 second delay if there are more emails to send
+            const remainingEmails = emailList.slice(i + 1).filter(e => e.selected && e.status !== "sent").length;
+            if (remainingEmails > 0 && !abortControllerRef.current.signal.aborted) {
+                for (let c = 13; c > 0; c--) {
+                    if (abortControllerRef.current.signal.aborted) break;
+                    setCountdown(c);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                setCountdown(null);
+            }
         }
         setIsSending(false);
+        setCountdown(null);
         toast.info("Sending process completed.");
     };
 
@@ -209,15 +224,23 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                 </button>
             </div>
 
-            {/* Progress Bar */}
-            {isSending && (
-                <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
-                    <motion.div
-                        className="h-full bg-blue-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ type: "tween", ease: "easeInOut" }}
-                    />
+            {/* Progress Bar & Countdown */}
+            {(isSending || countdown !== null) && (
+                <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-neutral-400 px-1">
+                        <span>Progress: {Math.round(progress)}%</span>
+                        {countdown !== null && (
+                            <span className="text-blue-400 font-medium">Next email in {countdown}s...</span>
+                        )}
+                    </div>
+                    <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                        <motion.div
+                            className="h-full bg-blue-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress}%` }}
+                            transition={{ type: "tween", ease: "easeInOut" }}
+                        />
+                    </div>
                 </div>
             )}
 
