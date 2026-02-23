@@ -9,10 +9,15 @@ export default function Home() {
   const emailOne = process.env.NEXT_PUBLIC_EMAIL_ONE || "email1@example.com";
   const emailTwo = process.env.NEXT_PUBLIC_EMAIL_TWO || "email2@example.com";
 
-  const [extractedEmails, setExtractedEmails] = useState<string[]>([]);
+  interface EmailData {
+    email: string;
+    name: string;
+  }
+
+  const [extractedEmails, setExtractedEmails] = useState<EmailData[]>([]);
   const [senderEmail, setSenderEmail] = useState<string | null>(null);
 
-  const handleEmailsExtracted = (emails: string[], sender: string) => {
+  const handleEmailsExtracted = (emails: EmailData[], sender: string) => {
     setExtractedEmails(emails);
     setSenderEmail(sender);
   };

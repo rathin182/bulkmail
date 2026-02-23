@@ -7,10 +7,15 @@ import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
+interface EmailData {
+    email: string;
+    name: string;
+}
+
 interface EmailUploaderProps {
     emailOne: string;
     emailTwo: string;
-    onEmailsExtracted: (emails: string[], sender: string) => void;
+    onEmailsExtracted: (emails: EmailData[], sender: string) => void;
 }
 
 export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }: EmailUploaderProps) {
@@ -58,18 +63,38 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
             const worksheet = workbook.Sheets[worksheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-            const extractedEmails: string[] = [];
+            const extractedData: EmailData[] = [];
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-            jsonData.forEach(row => {
-                row.forEach(cell => {
-                    if (typeof cell === 'string' && emailRegex.test(cell.trim())) {
-                        extractedEmails.push(cell.trim());
-                    }
-                });
-            });
+            if (jsonData.length > 0) {
+                const headers = jsonData[0].map(h => String(h).toLowerCase().trim());
+                const emailIndex = headers.findIndex(h => h.includes('email'));
+                const nameIndex = headers.findIndex(h => h.includes('name'));
 
-            finishExtraction(extractedEmails);
+                if (emailIndex !== -1) {
+                    // We found an email column, use it
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        const email = String(row[emailIndex] || '').trim();
+                        if (emailRegex.test(email)) {
+                            const name = nameIndex !== -1 ? String(row[nameIndex] || '').trim() : email.split('@')[0];
+                            extractedData.push({ email, name });
+                        }
+                    }
+                } else {
+                    // Fallback to previous logic: search every cell for an email
+                    jsonData.forEach(row => {
+                        row.forEach(cell => {
+                            if (typeof cell === 'string' && emailRegex.test(cell.trim())) {
+                                const email = cell.trim();
+                                extractedData.push({ email, name: email.split('@')[0] });
+                            }
+                        });
+                    });
+                }
+            }
+
+            finishExtraction(extractedData);
         } catch (error) {
             console.error("Error parsing file:", error);
             toast.error("Error parsing file.");
@@ -85,14 +110,20 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
         }
 
         const emailRegex = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
-        const extractedEmails = manualText.match(emailRegex) || [];
-        finishExtraction(extractedEmails);
+        const matches = manualText.match(emailRegex) || [];
+        const extractedData: EmailData[] = matches.map(email => ({
+            email: email.trim(),
+            name: email.trim().split('@')[0]
+        }));
+        finishExtraction(extractedData);
     };
 
-    const finishExtraction = (emails: string[]) => {
-        const uniqueEmails = Array.from(new Set(emails));
-        if (uniqueEmails.length > 0) {
-            onEmailsExtracted(uniqueEmails, selectedEmail!);
+    const finishExtraction = (data: EmailData[]) => {
+        // Unique by email
+        const uniqueData = Array.from(new Map(data.map(item => [item.email, item])).values());
+
+        if (uniqueData.length > 0) {
+            onEmailsExtracted(uniqueData, selectedEmail!);
         } else {
             toast.error("No valid emails found.");
         }

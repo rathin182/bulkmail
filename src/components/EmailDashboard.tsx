@@ -6,8 +6,13 @@ import { Send, StopCircle, RefreshCw, CheckCircle, XCircle, Loader2, Plus, Trash
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+interface EmailData {
+    email: string;
+    name: string;
+}
+
 interface EmailDashboardProps {
-    emails: string[];
+    emails: EmailData[];
     senderEmail: string;
     onReset: () => void;
 }
@@ -16,18 +21,20 @@ type SendingStatus = "pending" | "sending" | "sent" | "failed";
 
 interface EmailStatus {
     email: string;
+    name: string;
     status: SendingStatus;
     selected: boolean;
 }
 
 export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDashboardProps) {
     const [emailList, setEmailList] = useState<EmailStatus[]>(
-        emails.map((email) => ({ email, status: "pending", selected: true }))
+        emails.map((item) => ({ ...item, status: "pending", selected: true }))
     );
     const [isSending, setIsSending] = useState(false);
     const [progress, setProgress] = useState(0);
     const [countdown, setCountdown] = useState<number | null>(null);
     const [newEmail, setNewEmail] = useState("");
+    const [newName, setNewName] = useState("");
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const toggleSelection = (index: number) => {
@@ -54,8 +61,18 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
             toast.error("Email already exists in the list.");
             return;
         }
-        setEmailList(prev => [...prev, { email: newEmail, status: "pending", selected: true }]);
+        const name = newName || newEmail.split('@')[0];
+        setEmailList(prev => [...prev, { email: newEmail, name, status: "pending", selected: true }]);
         setNewEmail("");
+        setNewName("");
+    };
+
+    const updateName = (index: number, name: string) => {
+        setEmailList(prev => {
+            const newList = [...prev];
+            newList[index] = { ...newList[index], name };
+            return newList;
+        });
     };
 
     const removeEmail = (index: number) => {
@@ -96,8 +113,9 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                     body: JSON.stringify({
                         to: currentEmail.email,
                         from: senderEmail,
+                        clientName: currentEmail.name,
                         subject: "Bulk Email Test",
-                        text: `Hello, this is a test email from ${senderEmail}.`,
+                        text: `Hello ${currentEmail.name}, this is a test email from ${senderEmail}.`,
                     }),
                     signal: abortControllerRef.current.signal,
                 });
@@ -206,18 +224,25 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
             </div>
 
             {/* Manual Add Input */}
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-2">
+                <input
+                    type="text"
+                    placeholder="Name (Optional)"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="flex-1 bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2 text-white placeholder:text-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                />
                 <input
                     type="email"
-                    placeholder="Add manual email..."
+                    placeholder="Email Address"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    className="flex-1 bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2 text-white placeholder:text-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="flex-[2] bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2 text-white placeholder:text-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
                     onKeyDown={(e) => e.key === 'Enter' && addEmail()}
                 />
                 <button
                     onClick={addEmail}
-                    className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                    className="px-6 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
                     Add
@@ -245,10 +270,11 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
             )}
 
             <div className="bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden max-h-[500px] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-[40px_1fr_100px_40px] gap-4 p-4 border-b border-neutral-800 bg-neutral-900/80 sticky top-0 z-10 font-medium text-neutral-300">
+                <div className="grid grid-cols-[40px_1fr_1.5fr_100px_40px] gap-4 p-4 border-b border-neutral-800 bg-neutral-900/80 sticky top-0 z-10 font-medium text-neutral-300">
                     <div className="flex items-center justify-center cursor-pointer" onClick={toggleAll}>
                         {emailList.every(e => e.selected) && emailList.length > 0 ? <CheckSquare className="w-5 h-5 text-blue-500" /> : <Square className="w-5 h-5 text-neutral-500" />}
                     </div>
+                    <div>Name</div>
                     <div>Email Address</div>
                     <div className="text-center">Status</div>
                     <div className="text-center">Action</div>
@@ -262,7 +288,7 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className={cn(
-                                    "grid grid-cols-[40px_1fr_100px_40px] gap-4 p-3 items-center text-sm transition-colors hover:bg-neutral-900/30",
+                                    "grid grid-cols-[40px_1fr_1.5fr_100px_40px] gap-4 p-3 items-center text-sm transition-colors hover:bg-neutral-900/30",
                                     item.selected ? "opacity-100" : "opacity-50 grayscale",
                                     item.status === "sending" && "bg-blue-500/10"
                                 )}
@@ -270,7 +296,16 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                                 <div className="flex items-center justify-center cursor-pointer" onClick={() => toggleSelection(index)}>
                                     {item.selected ? <CheckSquare className="w-5 h-5 text-blue-500" /> : <Square className="w-5 h-5 text-neutral-600" />}
                                 </div>
-                                <div className="truncate text-neutral-300 font-mono">{item.email}</div>
+                                <div>
+                                    <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => updateName(index, e.target.value)}
+                                        readOnly={isSending}
+                                        className="w-full bg-transparent border-none focus:ring-1 focus:ring-blue-500/50 rounded px-1 py-0.5 text-neutral-200 outline-none hover:bg-neutral-800/50 transition-colors"
+                                    />
+                                </div>
+                                <div className="truncate text-neutral-400 font-mono">{item.email}</div>
                                 <div className="flex justify-center">
                                     {item.status === "pending" && <span className="text-neutral-500 text-xs">Pending</span>}
                                     {item.status === "sending" && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
