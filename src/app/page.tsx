@@ -8,6 +8,8 @@ import { AnimatePresence, motion } from "framer-motion";
 export default function Home() {
   const emailOne = process.env.NEXT_PUBLIC_EMAIL_ONE || "email1@example.com";
   const emailTwo = process.env.NEXT_PUBLIC_EMAIL_TWO || "email2@example.com";
+  const emailThree = process.env.NEXT_PUBLIC_EMAIL_THREE || "email3@example.com";
+  const emailFour = process.env.NEXT_PUBLIC_EMAIL_FOUR || "email4@example.com";
 
   interface EmailData {
     email: string;
@@ -65,6 +67,8 @@ export default function Home() {
               <EmailUploader
                 emailOne={emailOne}
                 emailTwo={emailTwo}
+                emailThree={emailThree}
+                emailFour={emailFour}
                 onEmailsExtracted={handleEmailsExtracted}
               />
             </motion.div>

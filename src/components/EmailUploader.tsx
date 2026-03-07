@@ -15,10 +15,12 @@ interface EmailData {
 interface EmailUploaderProps {
     emailOne: string;
     emailTwo: string;
+    emailThree: string;
+    emailFour: string;
     onEmailsExtracted: (emails: EmailData[], sender: string) => void;
 }
 
-export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }: EmailUploaderProps) {
+export default function EmailUploader({ emailOne, emailTwo, emailThree, emailFour, onEmailsExtracted }: EmailUploaderProps) {
     const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isParsing, setIsParsing] = useState(false);
@@ -136,7 +138,7 @@ export default function EmailUploader({ emailOne, emailTwo, onEmailsExtracted }:
                     Select Sender
                 </h2>
                 <div className="grid grid-cols-1 gap-4">
-                    {[emailOne, emailTwo].map((email) => (
+                    {[emailOne, emailTwo, emailThree, emailFour].map((email) => (
                         <motion.div
                             key={email}
                             whileHover={{ scale: 1.02 }}

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     <!-- HEADER -->
     <tr>
-      <td style="background:#111;color:#fff;padding:25px;text-align:center;">
+      <td style="background:#E49B0F;color:#fff;padding:25px;text-align:center;">
         <h1 style="margin:0;font-size:28px;">Backlink Bundle 🚀</h1>
         <p style="margin:10px 0 0;font-size:15px;">
           Long-Term SEO Growth • Real Backlinks • Real Results
@@ -45,6 +45,20 @@ export async function POST(req: Request) {
         <p style="font-size:16px;color:#333;">
           We created a <strong>content-driven backlink strategy</strong> designed for
           businesses that want <strong>real SEO growth</strong> — not shortcuts.
+        </p>
+
+        <!-- TOP CTA -->
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${orderUrl}" target="_blank"
+            style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 30px;
+            border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
+            View Backlink Bundle
+          </a>
+        </div>
+
+        <p style="text-align:center;font-size:14px;color:#666;">
+          or <a href="${orderUrl}" style="color:#2563eb;text-decoration:underline;">
+          click here to see full details</a>
         </p>
 
         <hr style="border:none;border-top:1px solid #eee;margin:25px 0;" />
@@ -76,14 +90,15 @@ export async function POST(req: Request) {
           across multiple websites — building topical authority and natural link growth.
         </p>
 
-        <!-- CTA BUTTON -->
-        <div style="text-align:center;margin:35px 0;">
-          <a href="${orderUrl}" target="_blank"
-             style="background:#111;color:#fff;text-decoration:none;padding:14px 28px;
-             border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
-             Get Backlink Bundle – $249
-          </a>
-        </div>
+        <p style="font-size:15px;color:#333;">
+          Want to see how it works?
+          <a href="${orderUrl}" style="color:#2563eb;font-weight:bold;text-decoration:underline;">
+          Click here to view the Backlink Bundle page
+          </a>.
+        </p>
+
+        <!-- MAIN CTA -->
+        
 
         <p style="color:#555;font-size:14px;line-height:1.6;">
           ✅ One-time payment<br/>
@@ -114,6 +129,15 @@ export async function POST(req: Request) {
 </div>
 `;
 
+// <div style="text-align:center;margin:35px 0;">
+//           <a href="${orderUrl}" target="_blank"
+//              style="background:#2563eb;color:#fff;text-decoration:none;padding:16px 34px;
+//              border-radius:8px;font-size:17px;font-weight:bold;display:inline-block;">
+//              Get Backlink Bundle – $249
+//           </a>
+//         </div>
+// text-align:center
+
     let user = '';
     let pass = '';
 
@@ -123,6 +147,8 @@ export async function POST(req: Request) {
     const senderEmail = from.trim();
     const emailOne = process.env.NEXT_PUBLIC_EMAIL_ONE?.trim();
     const emailTwo = process.env.NEXT_PUBLIC_EMAIL_TWO?.trim();
+    const emailThree = process.env.NEXT_PUBLIC_EMAIL_THREE?.trim();
+    const emailFour = process.env.NEXT_PUBLIC_EMAIL_FOUR?.trim();
 
     if (emailOne && senderEmail.toLowerCase() === emailOne.toLowerCase()) {
       user = emailOne;
@@ -130,6 +156,12 @@ export async function POST(req: Request) {
     } else if (emailTwo && senderEmail.toLowerCase() === emailTwo.toLowerCase()) {
       user = emailTwo;
       pass = process.env.EMAIL_TWO_PASS || '';
+    } else if (emailThree && senderEmail.toLowerCase() === emailThree.toLowerCase()) {
+      user = emailThree;
+      pass = process.env.EMAIL_THREE_PASS || '';
+    } else if (emailFour && senderEmail.toLowerCase() === emailFour.toLowerCase()) {
+      user = emailFour;
+      pass = process.env.EMAIL_FOUR_PASS || '';
     } else {
       // Fallback or error if the sender is not recognized/authorized
       // For now, we can check if generic SMTP_USER is set, otherwise fail.

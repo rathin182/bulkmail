@@ -114,7 +114,7 @@ export default function EmailDashboard({ emails, senderEmail, onReset }: EmailDa
                         to: currentEmail.email,
                         from: senderEmail,
                         clientName: currentEmail.name,
-                        subject: "Bulk Email Test",
+                        subject: "Struggling to Build Backlinks? Try This Instead!",
                         text: `Hello ${currentEmail.name}, this is a test email from ${senderEmail}.`,
                     }),
                     signal: abortControllerRef.current.signal,
