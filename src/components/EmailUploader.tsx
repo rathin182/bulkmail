@@ -180,7 +180,7 @@ export default function EmailUploader({ emailOne, emailTwo, emailThree, emailFou
                             {selectedEmail === email && (
                                 <motion.div
                                     layoutId="glow"
-                                    className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10"
+                                    className="absolute inset-0 bg-linear-to-r from-blue-500/10 to-purple-500/10"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                 />
