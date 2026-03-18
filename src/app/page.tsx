@@ -32,6 +32,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 md:p-24 bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950">
       <div className="z-10 w-full max-w-5xl items-center justify-center font-mono text-sm lg:flex flex-col gap-12">
+        <script id="messenger-widget-b" src="https://cdn.botpenguin.com/website-bot.js" defer>69ba4fa550dbfb04e379b8b7,69ba4f8bbb2df5d2976cd5b2</script>
         <div className="text-center space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 pb-2">
             Bulk Mail Sender
